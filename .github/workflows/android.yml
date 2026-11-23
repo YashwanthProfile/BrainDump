@@ -45,14 +45,23 @@ jobs:
         with:
           name: braindump-debug-apk
           path: braindump.apk
-      # One fixed download link per channel, always pointing at the newest build:
-      #   main            -> releases/download/latest/braindump.apk
-      #   any other branch -> releases/download/preview/braindump.apk
-      - name: Publish to a fixed download link
+      # main -> a numbered release (v + versionName), marked as the latest one.
+      #   Same version again? The APK on that release is replaced.
+      #   Download link that always works: releases/latest/download/braindump.apk
+      # any other branch -> one "preview" pre-release that gets overwritten.
+      - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then TAG=latest; TITLE="BrainDump (latest)"; PRE=""; else TAG=preview; TITLE="BrainDump preview"; PRE="--prerelease"; fi
-          NOTES="Built from ${GITHUB_REF_NAME} at ${GITHUB_SHA::7} on $(date -u +'%Y-%m-%d %H:%M UTC')."
-          gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG" braindump.apk --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" $PRE
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            TAG="v${VERSION}"
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              gh release upload "$TAG" braindump.apk --clobber
+            else
+              gh release create "$TAG" braindump.apk --target "$GITHUB_SHA" --title "BrainDump ${VERSION}" --notes "BrainDump ${VERSION}" --latest
+            fi
+          else
+            gh release delete preview --yes --cleanup-tag || true
+            gh release create preview braindump.apk --target "$GITHUB_SHA" --title "BrainDump preview" --notes "Built from ${GITHUB_REF_NAME} at ${GITHUB_SHA::7}." --prerelease
+          fi

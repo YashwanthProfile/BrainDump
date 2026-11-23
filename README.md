@@ -32,7 +32,7 @@ Plus: search, dark mode, an app lock (fingerprint, face or PIN), a text size you
 
 ## Download
 
-**[Download the latest APK](../../releases/download/latest/braindump.apk)** (Android 10 or newer).
+**[Download the latest APK](../../releases/latest/download/braindump.apk)** (Android 10 or newer).
 
 Open it on your phone and tap Install. You might see:
 
@@ -42,6 +42,8 @@ Open it on your phone and tap Install. You might see:
 - **App lock is greyed out**: set a screen lock on your phone first.
 
 To update, install the new APK over the old one. Your entries stay.
+
+**Want updates without checking back here?** Add this repo's link in [Obtainium](https://github.com/ImranR98/Obtainium). It tells you when a new version is out and installs it in one tap, while BrainDump itself stays offline.
 
 ## Your data
 
