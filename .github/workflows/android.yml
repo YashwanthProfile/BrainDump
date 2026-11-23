@@ -1,0 +1,54 @@
+name: Android build
+
+on:
+  push:
+    branches: ['**', '!screenshots']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build, unit test and render screenshots
+        run: ./gradlew assembleDebug recordRoborazziDebug --stacktrace
+      # Screenshots of every main screen, rendered without a phone, kept on the "screenshots" branch.
+      - name: Publish screenshots
+        if: always()
+        run: |
+          [ -d app/build/screenshots ] || exit 0
+          mkdir /tmp/shots && cp app/build/screenshots/*.png /tmp/shots/
+          cd /tmp/shots
+          git init -q -b screenshots
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "Screenshots for ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" screenshots
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk braindump.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: braindump-debug-apk
+          path: braindump.apk
+      # One fixed download link per channel, always pointing at the newest build:
+      #   main            -> releases/download/latest/braindump.apk
+      #   any other branch -> releases/download/preview/braindump.apk
+      - name: Publish to a fixed download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then TAG=latest; TITLE="BrainDump (latest)"; PRE=""; else TAG=preview; TITLE="BrainDump preview"; PRE="--prerelease"; fi
+          NOTES="Built from ${GITHUB_REF_NAME} at ${GITHUB_SHA::7} on $(date -u +'%Y-%m-%d %H:%M UTC')."
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" braindump.apk --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" $PRE
