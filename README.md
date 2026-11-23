@@ -48,3 +48,7 @@ To update, install the new APK over the old one. Your entries stay.
 ## Your data
 
 Everything lives inside the app on your phone. If you uninstall the app, your entries are gone too, so use **Settings → Export** now and then to keep a copy.
+
+## License
+
+GPL-3.0. Use it, change it, share it, as long as what you share stays open too.
