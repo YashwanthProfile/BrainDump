@@ -6,6 +6,14 @@ A journal for people who mean to write every day, and don't.
   <img src="docs/tour.gif" width="300" alt="A quick tour of BrainDump">
 </p>
 
+## Private by design
+
+- **No internet permission.** The app can't go online, even if it wanted to.
+- **No account, no cloud, no tracking.** No sign-up, no analytics, no ads.
+- **Nothing leaves your phone** unless you export it. Even Google backup is switched off for its data.
+- **Locked when you want.** Fingerprint, face or PIN, and the app hides its preview in recent apps.
+- **Open source.** Every line is here to read, under GPL-3.0.
+
 ## Why I made this
 
 I kept a journal for years. Most days I didn't write in it, and it wasn't because I had nothing to say. Opening it felt like a chore, and the blank page felt like homework. By night the day was a blur.
@@ -14,7 +22,7 @@ So I made the app I wished I had:
 
 - **It comes to you.** A gentle reminder asks what you've been up to, and you can answer right from the notification. Every reminder counts from the last time you wrote, so it never nags.
 - **Small is enough.** One line about what happened is a real entry. Write the longer version at night if you feel like it.
-- **It stays yours.** No account, no cloud, no internet permission at all. Your words never leave your phone unless you export them.
+- **It stays yours.** Your words are for you, not for a server somewhere.
 
 ## What's inside
 
