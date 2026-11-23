@@ -18,9 +18,10 @@ android {
         versionName = "1.1.0"
     }
 
-    // A fixed debug key (kept in this private repo) so every build can update the installed app in place.
+    // A fixed signing key (supplied to CI as a secret) so every build can update the installed app in place.
+    // Without it, the build falls back to your own local debug key.
     signingConfigs {
-        getByName("debug") {
+        if (file("debug.keystore").exists()) getByName("debug") {
             storeFile = file("debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"

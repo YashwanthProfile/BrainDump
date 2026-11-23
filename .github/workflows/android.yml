@@ -22,6 +22,10 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+      - name: Restore signing key
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: '[ -z "$SIGNING_KEY" ] || echo "$SIGNING_KEY" | base64 -d > app/debug.keystore'
       - name: Build, unit test and render screenshots
         run: ./gradlew assembleDebug recordRoborazziDebug --stacktrace
       # Screenshots of every main screen, rendered without a phone, kept on the "screenshots" branch.
