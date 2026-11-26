@@ -4,6 +4,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.braindump.data.Exporter
 import app.braindump.data.Repository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,5 +38,17 @@ class ExportTest {
         val journalOnly = names(true, false)
         assertFalse(journalOnly.any { it.startsWith("threads/") })
         assertTrue(journalOnly.any { it.startsWith("journal/") })
+    }
+
+    @Test fun hiddenThreadsStayOutOfSearch() = runBlocking {
+        val repo = Repository.get(ctx)
+        val open = repo.startThread("Moving to the hills", "quiet life", "")
+        val secret = repo.startThread("Moving the money", "quiet plan", "")
+        val t = repo.threads().first().first { it.id == secret }
+        repo.saveThread(t.copy(hidden = true))
+        val found = repo.searchThreads("quiet").first().map { it.id }
+        assertTrue(open in found)
+        assertFalse("a hidden thread never shows in search", secret in found)
+        assertTrue("hidden threads are still kept", repo.threads().first().any { it.id == secret && it.hidden })
     }
 }

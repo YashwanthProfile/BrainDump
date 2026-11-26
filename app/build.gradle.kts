@@ -14,8 +14,8 @@ android {
         applicationId = "app.braindump"
         minSdk = 29
         targetSdk = 35
-        versionCode = 20
-        versionName = "1.1.0"
+        versionCode = 21
+        versionName = "1.2.0"
     }
 
     // A fixed signing key (supplied to CI as a secret) so every build can update the installed app in place.

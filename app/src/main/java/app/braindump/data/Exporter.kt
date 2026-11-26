@@ -100,7 +100,7 @@ object Exporter {
                     put("threads/$name.md", md.toString())
                 }
                 json.put("threads", JSONArray(all.map {
-                    JSONObject().put("id", it.id).put("title", it.title).put("expectation", it.expectation).put("major", it.major)
+                    JSONObject().put("id", it.id).put("title", it.title).put("expectation", it.expectation).put("major", it.major).put("hidden", it.hidden)
                         .put("revisitDays", it.revisitDays).put("createdAt", it.createdAt)
                 }))
                 json.put("threadNotes", JSONArray(notes.map { JSONObject().put("id", it.id).put("threadId", it.threadId).put("at", it.at).put("text", it.text) }))

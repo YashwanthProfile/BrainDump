@@ -177,6 +177,8 @@ data class LifeThread(
     val revisitDays: Int = 30,
     /** A big life decision (true) or a small one (false); used for sorting. */
     @androidx.room.ColumnInfo(defaultValue = "0") val major: Boolean = false,
+    /** Kept out of the list, search and reminder text; opened only with fingerprint, face or PIN. */
+    @androidx.room.ColumnInfo(defaultValue = "0") val hidden: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 )

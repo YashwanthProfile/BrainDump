@@ -28,7 +28,7 @@ object Alarms {
             val lastPing = prefs.getLong(t.id, 0L)
             val firstSinceNote = lastPing < lastNote
             if (firstSinceNote || now - lastPing >= 7 * 86_400_000L) {
-                Notifications.showRevisit(context, t.id, t.title)
+                Notifications.showRevisit(context, t.id, t.title.takeUnless { t.hidden })
                 prefs.edit().putLong(t.id, now).apply()
             }
         }

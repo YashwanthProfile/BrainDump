@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.foundation.rememberScrollState
@@ -112,10 +113,49 @@ private fun ago(at: Long): String {
 private val monthYear = DateTimeFormatter.ofPattern("MMM yyyy")
 private fun since(at: Long) = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate().format(monthYear).uppercase()
 
-/** All threads as a quiet index: thin lines, no cards, the last thing you wrote underneath. */
+/**
+ * Hidden threads open only after fingerprint, face or PIN, every time, even with the app already unlocked.
+ * They lock again when you go back to the main list, or after the app has been away for a while.
+ */
+object HiddenLock {
+    var unlocked by mutableStateOf(false)
+
+    fun unlock(activity: androidx.fragment.app.FragmentActivity?, then: () -> Unit) {
+        if (activity == null) return
+        AppLock.authenticate(activity, "Unlock hidden threads") { ok -> if (ok) { unlocked = true; then() } }
+    }
+}
+
+/** Stands in for a hidden thread's content until you unlock. Asks once on arrival; a tap asks again. */
 @Composable
-fun ThreadsScreen(repo: Repository, onDays: () -> Unit, onOpen: (String) -> Unit, onSearch: () -> Unit, startSelecting: Boolean = false) {
-    val threads by repo.threads().collectAsStateWithLifecycle(emptyList())
+fun HiddenGate(onBack: () -> Unit, content: @Composable () -> Unit) {
+    if (HiddenLock.unlocked) { content(); return }
+    val activity = androidx.compose.ui.platform.LocalContext.current.findActivity()
+    LaunchedEffect(Unit) { HiddenLock.unlock(activity) {} }
+    Column(Modifier.fillMaxSize()) {
+        ScreenHeader("Hidden", onBack = onBack)
+        Column(Modifier.fillMaxWidth().padding(top = 120.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Rounded.Lock, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), modifier = Modifier.size(28.dp))
+            Gap(16)
+            TextButton(onClick = { HiddenLock.unlock(activity) {} }) { Text("Unlock", color = Hues.Journal) }
+        }
+    }
+}
+
+/** All threads as a quiet index: thin lines, no cards. With [hiddenOnly], the locked page of hidden threads. */
+@Composable
+fun ThreadsScreen(
+    repo: Repository, onDays: () -> Unit, onOpen: (String) -> Unit, onSearch: () -> Unit, startSelecting: Boolean = false,
+    hiddenOnly: Boolean = false, onHidden: () -> Unit = {}, onBack: () -> Unit = {},
+) {
+    if (hiddenOnly && !HiddenLock.unlocked) { HiddenGate(onBack) {}; return }
+    // Back on the main list, hidden threads lock again.
+    if (!hiddenOnly) LaunchedEffect(Unit) { HiddenLock.unlocked = false }
+    val activity = androidx.compose.ui.platform.LocalContext.current.findActivity()
+    val everything by repo.threads().collectAsStateWithLifecycle(emptyList())
+    val threads = everything.filter { it.hidden == hiddenOnly }
+    val hiddenCount = everything.count { it.hidden }
+    var noScreenLock by remember { mutableStateOf(false) }
     val notes by repo.allThreadNotes().collectAsStateWithLifecycle(emptyList())
     var creating by remember { mutableStateOf(false) }
     var sort by rememberSaveable { mutableStateOf("recent") }
@@ -134,14 +174,21 @@ fun ThreadsScreen(repo: Repository, onDays: () -> Unit, onOpen: (String) -> Unit
     Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
-                ScreenHeader("BrainDump", action = {
-                    IconButton(onClick = onSearch) {
-                        Icon(Icons.Rounded.Search, "Search threads", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                })
-                TopTabs(threads = true, onDays = onDays, onThreads = {})
+                if (hiddenOnly) {
+                    ScreenHeader("Hidden", onBack = onBack)
+                    Text("Only you can see these. They lock again when you leave.", style = QuietText, modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 8.dp))
+                } else {
+                    ScreenHeader("BrainDump", action = {
+                        IconButton(onClick = onSearch) {
+                            Icon(Icons.Rounded.Search, "Search threads", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    })
+                    TopTabs(threads = true, onDays = onDays, onThreads = {})
+                }
             }
-            if (threads.isEmpty()) item {
+            if (threads.isEmpty() && hiddenOnly) item {
+                Text("Nothing hidden.", style = QuietText, modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp))
+            } else if (threads.isEmpty()) item {
                 Column(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
                     Text("Decisions, questions, beliefs.", style = ProseText)
                     Gap(6)
@@ -205,19 +252,45 @@ fun ThreadsScreen(repo: Repository, onDays: () -> Unit, onOpen: (String) -> Unit
                                     Icon(Icons.Rounded.MoreVert, "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                                 }
                                 DropdownMenu(menu, { menu = false }) {
-                                    DropdownMenuItem(
-                                        text = { Text(if (t.major) "Move to small decisions" else "Move to big decisions") },
-                                        onClick = { menu = false; scope.launch { repo.saveThread(t.copy(major = !t.major)) } },
-                                    )
-                                    DropdownMenuItem(text = { Text("Revisit reminder") }, onClick = { menu = false; revisiting = t })
+                                    if (hiddenOnly) {
+                                        DropdownMenuItem(text = { Text("Unhide") }, onClick = { menu = false; scope.launch { repo.saveThread(t.copy(hidden = false)) } })
+                                        DropdownMenuItem(text = { Text("Revisit reminder") }, onClick = { menu = false; revisiting = t })
+                                    } else {
+                                        DropdownMenuItem(
+                                            text = { Text(if (t.major) "Move to small decisions" else "Move to big decisions") },
+                                            onClick = { menu = false; scope.launch { repo.saveThread(t.copy(major = !t.major)) } },
+                                        )
+                                        DropdownMenuItem(text = { Text("Revisit reminder") }, onClick = { menu = false; revisiting = t })
+                                        DropdownMenuItem(text = { Text("Hide thread") }, onClick = {
+                                            menu = false
+                                            if (activity != null && AppLock.available(activity)) scope.launch { repo.saveThread(t.copy(hidden = true)) }
+                                            else noScreenLock = true
+                                        })
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            // A faint way in to hidden threads, only when there are some.
+            if (!hiddenOnly && !selecting && hiddenCount > 0) item(key = "hidden-link") {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 36.dp), horizontalArrangement = Arrangement.Center,
+                ) {
+                    Row(
+                        Modifier.clip(CircleShape).clickable { HiddenLock.unlock(activity, onHidden) }.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val faint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                        Icon(Icons.Rounded.Lock, null, tint = faint, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Hidden", style = MaterialTheme.typography.labelLarge, color = faint)
+                    }
+                }
+            }
         }
-        if (!selecting) ExtendedFloatingActionButton(
+        if (!selecting && !hiddenOnly) ExtendedFloatingActionButton(
             onClick = { creating = true },
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(20.dp),
             containerColor = Hues.Journal, contentColor = Color.White,
@@ -271,6 +344,12 @@ fun ThreadsScreen(repo: Repository, onDays: () -> Unit, onOpen: (String) -> Unit
         )
     }
 
+    if (noScreenLock) AlertDialog(
+        onDismissRequest = { noScreenLock = false },
+        title = { Text("Set a screen lock first") },
+        text = { Text("Hidden threads open with your fingerprint, face or PIN. Set a screen lock on your phone, then try again.") },
+        confirmButton = { TextButton(onClick = { noScreenLock = false }) { Text("OK") } },
+    )
     if (creating) NewThreadSheet(onDismiss = { creating = false }) { title, why, expect, major, decided ->
         creating = false
         scope.launch { onOpen(repo.startThread(title, why, expect, major = major, decidedAt = decided)) }
@@ -374,6 +453,7 @@ fun ThreadScreen(repo: Repository, id: String, onBack: () -> Unit, startEditing:
     var pickingDate by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<ThreadNote?>(null) }
     val t = thread ?: return
+    if (t.hidden && !HiddenLock.unlocked) { HiddenGate(onBack) {}; return }
     // The decision card is permanent: a thread always has its first note, even if it's empty.
     LaunchedEffect(t.id, loadedNotes) {
         if (loadedNotes != null && loadedNotes!!.isEmpty()) {

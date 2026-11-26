@@ -84,7 +84,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onStart() {
         super.onStart()
         // Lock again if the app was away for more than 30 seconds (short trips, like picking a photo, don't count).
-        if (stoppedAt > 0 && System.currentTimeMillis() - stoppedAt > 30_000) locked = true
+        if (stoppedAt > 0 && System.currentTimeMillis() - stoppedAt > 30_000) { locked = true; app.braindump.ui.HiddenLock.unlocked = false }
         if (lockEnabled && locked) askUnlock()
     }
 
@@ -200,7 +200,10 @@ private fun AppScaffold(nav: NavHostController, repo: Repository, settings: Sett
                 )
             }
             composable("threads") {
-                ThreadsScreen(repo, onDays = { nav.popBackStack("journal", false) }, onOpen = { nav.navigate("thread/$it") }, onSearch = { nav.navigate("search-threads") })
+                ThreadsScreen(repo, onDays = { nav.popBackStack("journal", false) }, onOpen = { nav.navigate("thread/$it") }, onSearch = { nav.navigate("search-threads") }, onHidden = { nav.navigate("threads-hidden") { launchSingleTop = true } })
+            }
+            composable("threads-hidden") {
+                ThreadsScreen(repo, onDays = {}, onOpen = { nav.navigate("thread/$it") }, onSearch = {}, hiddenOnly = true, onBack = { nav.popBackStack() })
             }
             composable("thread/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 ThreadScreen(repo, e.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })

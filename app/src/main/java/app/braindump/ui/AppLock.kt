@@ -14,14 +14,14 @@ object AppLock {
     fun available(activity: FragmentActivity): Boolean =
         BiometricManager.from(activity).canAuthenticate(ALLOWED) == BiometricManager.BIOMETRIC_SUCCESS
 
-    fun authenticate(activity: FragmentActivity, onResult: (Boolean) -> Unit) {
+    fun authenticate(activity: FragmentActivity, title: String = "Unlock BrainDump", onResult: (Boolean) -> Unit) {
         val prompt = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onResult(true)
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) = onResult(false)
         })
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock BrainDump")
+                .setTitle(title)
                 .setAllowedAuthenticators(ALLOWED)
                 .build()
         )

@@ -80,6 +80,7 @@ class ScreenshotTest {
             35 to "Lowest point so far. Comparing myself to friends back home.",
             10 to "Joined a running group. It finally feels like my city too. Glad I came.",
         ).forEach { (back, text) -> repo.saveThreadNote(app.braindump.data.ThreadNote(threadId = big.id, at = at(today.minusDays(back.toLong()), 21), text = text)) }
+        repo.saveThread(app.braindump.data.LifeThread(title = "Changing careers", hidden = true, createdAt = at(today.minusDays(40), 21)))
         repo.startThread("Selling the car", "Cycling to work instead. Worth it if I still like it after the rainy season.", "")
         repo.saveDayTitle(y.toString(), "The calm morning")
         repo.saveDayTitle(today.minusDays(2).toString(), "River walk and a long talk")
@@ -104,6 +105,7 @@ class ScreenshotTest {
                         "month" -> MonthScreen(repo, LocalDate.now().toString().take(7), {}, {})
                         "day" -> DayScreen(repo, yesterday, {})
                         "threads" -> ThreadsScreen(repo, {}, {}, {})
+                        "threads-hidden" -> ThreadsScreen(repo, {}, {}, {}, hiddenOnly = true)
                         "threads-select" -> ThreadsScreen(repo, {}, {}, {}, startSelecting = true)
                         "new-thread" -> androidx.compose.foundation.layout.Box(androidx.compose.foundation.layout.PaddingValues(top = 40.dp).let { androidx.compose.ui.Modifier.padding(it) }) { app.braindump.ui.NewThreadForm { _, _, _, _, _ -> } }
                         "thread" -> ThreadScreen(repo, threadId, {})
@@ -116,9 +118,10 @@ class ScreenshotTest {
                 }
             }
         }
-        val shots = listOf("journal", "month", "day", "day-edit", "search", "threads", "threads-select", "new-thread", "thread", "thread-edit", "thread-empty", "thread-empty-edit")
+        val shots = listOf("journal", "month", "day", "day-edit", "search", "threads", "threads-hidden", "threads-select", "new-thread", "thread", "thread-edit", "thread-empty", "thread-empty-edit")
         for (m in listOf(ThemeMode.LIGHT, ThemeMode.DARK)) {
             for (s in shots) {
+                if (s == "threads-hidden") app.braindump.ui.HiddenLock.unlocked = true
                 mode = m; screen = s
                 settle()
                 compose.onRoot().captureRoboImage("build/screenshots/${m.name.lowercase()}-$s.png")

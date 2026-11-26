@@ -222,7 +222,7 @@ interface ThreadDao {
     @Query("SELECT * FROM thread_note ORDER BY at")
     fun allNotes(): Flow<List<ThreadNote>>
 
-    @Query("SELECT * FROM life_thread WHERE title LIKE '%' || :q || '%' OR expectation LIKE '%' || :q || '%' OR id IN (SELECT threadId FROM thread_note WHERE text LIKE '%' || :q || '%')")
+    @Query("SELECT * FROM life_thread WHERE hidden = 0 AND (title LIKE '%' || :q || '%' OR expectation LIKE '%' || :q || '%' OR id IN (SELECT threadId FROM thread_note WHERE text LIKE '%' || :q || '%'))")
     fun search(q: String): Flow<List<LifeThread>>
 
     @Upsert suspend fun upsert(t: LifeThread)
@@ -230,6 +230,12 @@ interface ThreadDao {
     @Delete suspend fun delete(n: ThreadNote)
     @Query("DELETE FROM thread_note WHERE threadId = :id") suspend fun deleteNotesOf(id: String)
     @Query("DELETE FROM life_thread WHERE id = :id") suspend fun deleteThread(id: String)
+}
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE life_thread ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0")
+    }
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
@@ -281,7 +287,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         Meal::class, Workout::class, Exercise::class, ExerciseSet::class, Habit::class, HabitLog::class,
         LifeThread::class, ThreadNote::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -304,7 +310,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "braindump.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build().also { instance = it }
             }
     }
 }

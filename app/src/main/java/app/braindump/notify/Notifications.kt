@@ -107,12 +107,13 @@ object Notifications {
         NotificationManagerCompat.from(context).notify(ID_REVIEW, n)
     }
 
-    fun showRevisit(context: Context, threadId: String, title: String) {
+    /** A hidden thread comes with no title, so nothing private shows on the lock screen. */
+    fun showRevisit(context: Context, threadId: String, title: String?) {
         if (!canPost(context)) return
         val id = 1000 + (threadId.hashCode() and 0x7fff)
         val n = NotificationCompat.Builder(context, CHANNEL_REVISIT)
             .setSmallIcon(R.drawable.ic_note)
-            .setContentTitle("Revisit: $title")
+            .setContentTitle(if (title != null) "Revisit: $title" else "A thread is due for a revisit")
             .setContentText("How do you see it now?")
             .setContentIntent(openApp(context, "thread:$threadId", id))
             .setAutoCancel(true)

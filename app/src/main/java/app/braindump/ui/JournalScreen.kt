@@ -41,7 +41,7 @@ private val weekday = DateTimeFormatter.ofPattern("EEE")
 fun JournalScreen(repo: Repository, onOpenMonth: (String) -> Unit, onSearch: () -> Unit = {}, onThreads: () -> Unit = {}, onOpenThread: (String) -> Unit = {}) {
     val threads by repo.threads().collectAsStateWithLifecycle(emptyList())
     val threadNotes by repo.allThreadNotes().collectAsStateWithLifecycle(emptyList())
-    val due = remember(threads, threadNotes) { dueThreads(threads, threadNotes) }
+    val due = remember(threads, threadNotes) { dueThreads(threads.filterNot { it.hidden }, threadNotes) }
     val counts by repo.entryCounts("0000-01-01", "9999-12-31").collectAsStateWithLifecycle(emptyList())
     val days by repo.daysBetween("0000-01-01", "9999-12-31").collectAsStateWithLifecycle(emptyList())
     val byDate = remember(counts, days) {
@@ -291,7 +291,7 @@ fun PastDayPicker(initial: LocalDate, onDismiss: () -> Unit, onPick: (String) ->
     ) { DatePicker(state, showModeToggle = false) }
 }
 
-private tailrec fun android.content.Context.findActivity(): androidx.fragment.app.FragmentActivity? = when (this) {
+internal tailrec fun android.content.Context.findActivity(): androidx.fragment.app.FragmentActivity? = when (this) {
     is androidx.fragment.app.FragmentActivity -> this
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null

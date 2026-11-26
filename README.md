@@ -11,7 +11,7 @@ A journal for people who mean to write every day, and don't.
 - **No internet permission.** The app can't go online, even if it wanted to.
 - **No account, no cloud, no tracking.** No sign-up, no analytics, no ads.
 - **Nothing leaves your phone** unless you export it. Even Google backup is switched off for its data.
-- **Locked when you want.** Fingerprint, face or PIN, and the app hides its preview in recent apps.
+- **Locked when you want.** Lock the whole app, or hide single threads behind your fingerprint, face or PIN.
 - **Open source.** Every line is here to read, under GPL-3.0.
 
 ## Why I made this
@@ -28,7 +28,7 @@ So I made the app I wished I had:
 
 **Journal.** Each day has two halves: a timeline of small moments, and a write-up you can read like a blog post. Put photos anywhere in the text, add lists, and use bold, italic or highlight when a line matters.
 
-**Threads.** For big and small decisions. Write down why you chose something and what you expect. Come back months later and add how you see it now. The app reminds you when it's time.
+**Threads.** For big and small decisions. Write down why you chose something and what you expect. Come back months later and add how you see it now. The app reminds you when it's time. Some decisions are just for you: hide a thread, and it opens only with your fingerprint, face or PIN.
 
 <p align="center">
   <img src="docs/dark-day.png" width="220" alt="A day, read like a blog post">
